@@ -17,4 +17,4 @@ jobs:
       run: |
         pip install requests
     - name: Run Scraper
-      run: python scraper.py  # 改成你的代码文件名
+      run: python scrape.py  # 改成你的代码文件名
