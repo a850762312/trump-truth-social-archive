@@ -1,0 +1,20 @@
+name: Hourly Scraper
+
+on:
+  schedule:
+    - cron: '0 * * * *'  # 这行表示每小时运行
+
+jobs:
+  run-scraper:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+    - name: Install dependencies
+      run: |
+        pip install requests
+    - name: Run Scraper
+      run: python scraper.py  # 改成你的代码文件名
