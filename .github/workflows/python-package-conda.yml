@@ -1,11 +1,9 @@
-name: trump-truth-social-archive
+name: Trump Truth Social Archive
 
 on:
   workflow_dispatch:  # 允许手动触发
   schedule:
     - cron: '0 * * * *'  # 每小时运行一次（整点）
-    # 注释掉原来的4小时运行计划
-    # - cron: '47 */4 * * *'  # Runs every 4 hours at :47
 
 jobs:
   scrape-and-update:
@@ -19,7 +17,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.10'  # 使用较新的Python版本
+          python-version: '3.10'  # 匹配源代码需求
       
       # 3. 安装依赖
       - name: Install dependencies
@@ -27,11 +25,11 @@ jobs:
           python -m pip install --upgrade pip
           pip install requests
       
-      # 4. 运行爬虫脚本
+      # 4. 运行爬虫脚本（关键适配）
       - name: Run scraper
         run: python scrape.py
         env:
-          # 使用正确的环境变量名
+          # 传递环境变量 - 与代码中的 os.getenv("SCRAPE_PROXY_KEY") 匹配
           SCRAPE_PROXY_KEY: ${{ secrets.SCRAPE_PROXY_KEY }}
       
       # 5. 提交更新
@@ -40,7 +38,7 @@ jobs:
           git config --local user.email "github-actions@example.com"
           git config --local user.name "GitHub Actions"
           git add data/
-          git commit -m "Auto-update data" || echo "No changes to commit"
+          git commit -m "Auto-update: $(date +'%Y-%m-%d %H:%M')" || echo "No changes to commit"
           git push
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
