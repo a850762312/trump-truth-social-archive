@@ -7,6 +7,8 @@ import re
 
 # Load credentials from environment variables
 SCRAPEOPS_API_KEY = os.getenv("SCRAPE_PROXY_KEY")
+
+print("环境变量测试：", os.getenv("SCRAPEOPS_API_KEY") is not None)
 SCRAPEOPS_ENDPOINT = "https://proxy.scrapeops.io/v1/"
 OUTPUT_JSON_FILE = "./data/truth_archive.json"
 OUTPUT_CSV_FILE = "./data/truth_archive.csv"
