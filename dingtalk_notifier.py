@@ -188,16 +188,17 @@ def main():
     # 按时间排序（最新的在后面）
     new_posts.sort(key=lambda x: x['created_at'])
 
-    # 发送新内容
+    # 修改main()函数中的发送逻辑部分
     newly_sent_ids = []
-    for post in new_posts:
+    for post in new_posts[-10:]:
         message = format_message(post['created_at'], post['content'])
 
         try:
             result = dingtalk_service.send_message(access_token, message)
             print(f"发送消息结果: {result}")
-            # 钉钉新版API成功时通常返回空响应或包含requestId
-            if result is None or 'requestId' in result or result.get('success') == True:
+
+            # 更新判断逻辑：适配钉钉实际响应格式
+            if result and ('processQueryKey' in result or 'requestId' in result):
                 print(f"成功发送消息: {post['id']}")
                 newly_sent_ids.append(post['id'])
             else:
