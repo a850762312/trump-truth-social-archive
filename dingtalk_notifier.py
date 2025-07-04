@@ -7,8 +7,9 @@ from alibabacloud_dingtalk.oauth2_1_0.client import Client as DingTalkOAuth2Clie
 from alibabacloud_tea_openapi import models as open_api_models
 from alibabacloud_dingtalk.oauth2_1_0 import models as dingtalk_oauth2_models
 from alibabacloud_tea_util.client import Client as UtilClient
-
-
+import random
+from googletrans import Translator
+import time
 class DingTalkService:
     """钉钉API服务类，处理钉钉开放平台接口调用"""
 
@@ -140,7 +141,7 @@ def save_sent_ids(file_path, sent_ids):
         json.dump(sent_ids, f, ensure_ascii=False, indent=2)
 
 
-def format_message(created_at, content):
+ef format_message(created_at, content):
     """格式化消息"""
     # 转换时间格式并转换为北京时间 (UTC+8)
     dt = datetime.fromisoformat(created_at.replace('Z', '+00:00'))
@@ -151,7 +152,35 @@ def format_message(created_at, content):
     # 修复转义引号：将错误编码的字符恢复为正常引号
     fixed_content = content.encode('latin-1').decode('utf-8', errors='ignore')
 
-    return f"🕐 {formatted_time} (北京时间)\n\n{fixed_content}"
+    # 翻译内容
+    translated_content = translate_to_chinese(fixed_content)
+
+    # 如果翻译成功，添加到消息末尾
+    if translated_content and translated_content != fixed_content:
+        return f"🕐 {formatted_time} (北京时间)\n\n{fixed_content}\n\n📝 中文翻译：\n{translated_content}"
+    else:
+        return f"🕐 {formatted_time} (北京时间)\n\n{fixed_content}"
+
+
+def translate_to_chinese(text):
+    """将英文翻译成中文"""
+    try:
+        translator = Translator()
+        # 添加随机延迟避免请求过快
+        time.sleep(random.uniform(0.5, 1.5))
+
+        # 检测语言并翻译
+        detection = translator.detect(text)
+        if detection.lang == 'zh' or detection.lang == 'zh-cn':
+            # 如果已经是中文，直接返回
+            return None
+
+        result = translator.translate(text, dest='zh-cn')
+        print(result)
+        return result.text
+    except Exception as e:
+        print(f"翻译失败: {e}")
+        # 翻译失败时返回None，不影响原消息发送
 
 
 def main():
