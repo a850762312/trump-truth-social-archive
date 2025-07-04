@@ -177,7 +177,7 @@ def main():
 
     # 筛选新内容
     new_posts = []
-    for post in truth_data[-5:]:
+    for post in truth_data[-15:]:
         if post['id'] not in sent_ids:
             new_posts.append(post)
 
