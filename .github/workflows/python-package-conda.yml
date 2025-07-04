@@ -28,6 +28,7 @@ jobs:
         pip install alibabacloud-dingtalk
         pip install alibabacloud-tea-openapi
         pip install alibabacloud-tea-util
+        pip install -r requirements.txt
         # 如果你的scrape.py需要其他依赖，请在这里添加
         # pip install beautifulsoup4 selenium等
     
