@@ -192,13 +192,16 @@ def main():
 
     # 修改main()函数中的发送逻辑部分
     newly_sent_ids = []
-    for post in new_posts[-10:]:
-        message = format_message(post['created_at'], post['content'])
+    for post in new_posts[-5:]:
+        # 检查内容是否为空
+        if not post['content'] or post['content'].strip() == '':
+            print(f"跳过空内容的帖子: {post['id']}")
+            continue
 
+        message = format_message(post['created_at'], post['content'])
         try:
             result = dingtalk_service.send_message(access_token, message)
             print(f"发送消息结果: {result}")
-
             # 更新判断逻辑：适配钉钉实际响应格式
             if result and ('processQueryKey' in result or 'requestId' in result):
                 print(f"成功发送消息: {post['id']}")
