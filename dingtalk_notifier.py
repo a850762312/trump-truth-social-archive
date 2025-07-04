@@ -144,12 +144,14 @@ def format_message(created_at, content):
     """格式化消息"""
     # 转换时间格式并转换为北京时间 (UTC+8)
     dt = datetime.fromisoformat(created_at.replace('Z', '+00:00'))
-    # 转换为北京时间 (UTC+8)
     beijing_tz = timezone(timedelta(hours=8))
     beijing_time = dt.astimezone(beijing_tz)
     formatted_time = beijing_time.strftime('%Y-%m-%d %H:%M:%S')
 
-    return f"🕐 {formatted_time} (北京时间)\n\n{content}"
+    # 修复转义引号：将错误编码的字符恢复为正常引号
+    fixed_content = content.encode('latin-1').decode('utf-8', errors='ignore')
+
+    return f"🕐 {formatted_time} (北京时间)\n\n{fixed_content}"
 
 
 def main():
