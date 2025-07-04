@@ -141,6 +141,27 @@ def save_sent_ids(file_path, sent_ids):
         json.dump(sent_ids, f, ensure_ascii=False, indent=2)
 
 
+def fix_text(text):
+    original_text = text
+
+    # 情况一：先判断是否含有 \u00xx 或 \u2019 类字符
+    if re.search(r'\\u[0-9a-fA-F]{4}', text):
+        try:
+            text = text.encode("utf-8").decode("unicode_escape")
+        except Exception:
+            pass
+
+    # 情况二：仅当出现乱码字符时才尝试 latin1 修复
+    # 例如：â€” â€œ â€™
+    if re.search(r'[â€˜â€™â€œâ€�]', text):
+        try:
+            text = text.encode("latin1").decode("utf-8")
+        except Exception:
+            pass
+
+    return text
+
+
 def format_message(created_at, content):
     """格式化消息"""
     # 转换时间格式并转换为北京时间 (UTC+8)
@@ -150,7 +171,7 @@ def format_message(created_at, content):
     formatted_time = beijing_time.strftime('%Y-%m-%d %H:%M:%S')
 
     # 修复转义引号：将错误编码的字符恢复为正常引号
-    fixed_content = content.encode('latin-1').decode('utf-8', errors='ignore')
+    fixed_content = fix_text(content)
 
     # 翻译内容
     translated_content = translate_to_chinese(fixed_content)
