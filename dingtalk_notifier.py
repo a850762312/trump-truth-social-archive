@@ -141,7 +141,7 @@ def save_sent_ids(file_path, sent_ids):
         json.dump(sent_ids, f, ensure_ascii=False, indent=2)
 
 
-ef format_message(created_at, content):
+def format_message(created_at, content):
     """格式化消息"""
     # 转换时间格式并转换为北京时间 (UTC+8)
     dt = datetime.fromisoformat(created_at.replace('Z', '+00:00'))
