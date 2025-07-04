@@ -177,7 +177,7 @@ def main():
 
     # 筛选新内容
     new_posts = []
-    for post in truth_data:
+    for post in truth_data[-5:]:
         if post['id'] not in sent_ids:
             new_posts.append(post)
 
@@ -192,7 +192,7 @@ def main():
 
     # 修改main()函数中的发送逻辑部分
     newly_sent_ids = []
-    for post in new_posts[-5:]:
+    for post in new_posts:
         # 检查内容是否为空
         if not post['content'] or post['content'].strip() == '':
             print(f"跳过空内容的帖子: {post['id']}")
