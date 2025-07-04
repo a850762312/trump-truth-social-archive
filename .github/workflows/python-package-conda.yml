@@ -1,4 +1,4 @@
-name: Trump Truth Social Archive
+name: Trump Truth Social Archive & Notify
 
 on:
   workflow_dispatch:  # 允许手动触发
@@ -17,7 +17,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.10'  # 匹配源代码需求
+          python-version: '3.10'
       
       # 3. 安装依赖
       - name: Install dependencies
@@ -25,19 +25,129 @@ jobs:
           python -m pip install --upgrade pip
           pip install requests
       
-      # 4. 运行爬虫脚本（关键适配）
+      # 4. 运行爬虫脚本
       - name: Run scraper
         run: python scrape.py
         env:
-          # 传递环境变量 - 与代码中的 os.getenv("SCRAPE_PROXY_KEY") 匹配
           SCRAPE_PROXY_KEY: ${{ secrets.SCRAPE_PROXY_KEY }}
       
-      # 5. 提交更新
+      # 5. 安装通知脚本依赖
+      - name: Install notification dependencies
+        run: pip install python-dateutil
+      
+      # 6. 运行通知脚本
+      - name: Run notification
+        env:
+          DINGTALK_ACCESS_TOKEN: ${{ secrets.DINGTALK_ACCESS_TOKEN }}
+          DINGTALK_OPEN_CONVERSATION_ID: ${{ secrets.DINGTALK_OPEN_CONVERSATION_ID }}
+          DINGTALK_ROBOT_CODE: ${{ secrets.DINGTALK_ROBOT_CODE }}
+        run: |
+          # 创建通知脚本
+          cat << 'EOF' > send_updates.py
+          import os
+          import json
+          import requests
+          from datetime import datetime, timezone, timedelta
+          import hashlib
+          import dateutil.parser
+          
+          # 配置参数
+          ACCESS_TOKEN = os.environ['DINGTALK_ACCESS_TOKEN']
+          OPEN_CONVERSATION_ID = os.environ['DINGTALK_OPEN_CONVERSATION_ID']
+          ROBOT_CODE = os.environ['DINGTALK_ROBOT_CODE']
+          JSON_URL = "https://raw.githubusercontent.com/${{ github.repository }}/main/data/truth_archive.json"
+          HISTORY_FILE = "posted_messages.txt"
+          
+          def send_dingtalk_message(content):
+              """发送消息到钉钉群"""
+              url = "https://api.dingtalk.com/v1.0/robot/groupMessages/send"
+              headers = {
+                  "Content-Type": "application/json",
+                  "x-acs-dingtalk-access-token": ACCESS_TOKEN
+              }
+              payload = {
+                  "msgKey": "sampleText",
+                  "msgParam": json.dumps({"content": content}),
+                  "openConversationId": OPEN_CONVERSATION_ID,
+                  "robotCode": ROBOT_CODE
+              }
+              response = requests.post(url, headers=headers, json=payload)
+              return response.json()
+          
+          def utc_to_beijing(utc_str):
+              """UTC时间转北京时间（UTC+8）"""
+              utc_time = dateutil.parser.isoparse(utc_str)
+              beijing_time = utc_time.astimezone(timezone(timedelta(hours=8)))
+              return beijing_time.strftime("%Y-%m-%d %H:%M:%S")
+          
+          def get_content_hash(content):
+              """生成内容哈希值用于去重"""
+              return hashlib.md5(content.encode()).hexdigest()
+          
+          def load_posted_hashes():
+              """加载已发送消息的哈希记录"""
+              if os.path.exists(HISTORY_FILE):
+                  with open(HISTORY_FILE, 'r') as f:
+                      return set(f.read().splitlines())
+              return set()
+          
+          def save_posted_hashes(hashes):
+              """保存新的哈希记录"""
+              with open(HISTORY_FILE, 'w') as f:
+                  f.write('\n'.join(hashes))
+          
+          # 主逻辑
+          try:
+              posted_hashes = load_posted_hashes()
+              new_hashes = set()
+              
+              # 获取最新JSON数据
+              response = requests.get(JSON_URL)
+              response.raise_for_status()
+              data = response.json()
+              
+              # 处理新消息
+              new_messages = []
+              for item in data:
+                  content_hash = get_content_hash(item['content'])
+                  if content_hash not in posted_hashes:
+                      new_messages.append(item)
+                      new_hashes.add(content_hash)
+              
+              if not new_messages:
+                  print("没有发现新内容")
+                  exit(0)
+              
+              # 逆序处理（保证显示顺序正确）
+              for item in reversed(new_messages):
+                  beijing_time = utc_to_beijing(item['created_at'])
+                  message_content = f"🕒 北京时间: {beijing_time}\n📝 内容: {item['content']}"
+                  
+                  try:
+                      result = send_dingtalk_message(message_content)
+                      print(f"发送成功: {item['id']}")
+                  except Exception as e:
+                      print(f"发送失败: {item['id']}, 错误: {str(e)}")
+              
+              # 更新历史记录
+              posted_hashes.update(new_hashes)
+              save_posted_hashes(posted_hashes)
+              print(f"新增 {len(new_messages)} 条记录已保存")
+          
+          except Exception as e:
+              print(f"处理失败: {str(e)}")
+              exit(1)
+          EOF
+          
+          # 执行通知脚本
+          python send_updates.py
+      
+      # 7. 提交所有更新（包括爬取的数据和历史记录）
       - name: Commit and push changes
         run: |
           git config --local user.email "github-actions@example.com"
           git config --local user.name "GitHub Actions"
-          git add data/
+          git add data/ posted_messages.txt
           git commit -m "Auto-update: $(date +'%Y-%m-%d %H:%M')" || echo "No changes to commit"
           git push
         env:
