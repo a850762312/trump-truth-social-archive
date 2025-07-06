@@ -1,0 +1,51 @@
+name: Trump Truth Social DingTalk Notifier
+
+on:
+  schedule:
+    # 每4小时运行一次 (UTC时间)，在52分钟时执行（原47分钟延后5分钟）
+    - cron: '50 */4 * * *'
+  workflow_dispatch: # 允许手动触发
+
+jobs:
+  notify-only:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+    
+    - name: Install dependencies
+      run: |
+        set -e
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install alibabacloud-dingtalk
+        pip install alibabacloud-tea-openapi
+        pip install alibabacloud-tea-util
+    
+    - name: Run DingTalk Notifier
+      env:
+        DINGTALK_APP_KEY: ${{ secrets.DINGTALK_APP_KEY }}
+        DINGTALK_APP_SECRET: ${{ secrets.DINGTALK_APP_SECRET }}
+        DINGTALK_OPEN_CONVERSATION_ID: ${{ secrets.DINGTALK_OPEN_CONVERSATION_ID }}
+        DINGTALK_ROBOT_CODE: ${{ secrets.DINGTALK_ROBOT_CODE }}
+      run: |
+        python dingtalk_notifier.py
+    
+    - name: Commit and push changes
+      run: |
+        set -e
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add -A
+        git commit -m "Auto update: $(date)" -a --allow-empty --author="GitHub Action <action@github.com>"
+        git push origin main
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
