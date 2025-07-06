@@ -125,7 +125,14 @@ def save_json_data(file_path, data):
     with open(file_path, 'w', encoding='utf-8') as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
 
-
+def load_json_data_from_url(url):
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        print(f"从URL加载数据失败: {e}")
+        return []
 def load_sent_ids(file_path):
     """加载已发送的ID列表"""
     try:
@@ -208,9 +215,11 @@ def main():
     # 文件路径
     data_file = 'data/truth_archive.json'
     sent_ids_file = 'data/sent_ids.json'
+    data_url = 'https://raw.githubusercontent.com/stiles/trump-truth-social-archive/refs/heads/main/data/truth_archive.json'
 
     # 加载数据
-    truth_data = load_json_data(data_file)
+    # truth_data = load_json_data(data_file)
+    truth_data = load_json_data_from_url(data_url)
     sent_ids = load_sent_ids(sent_ids_file)
 
     if not truth_data:
