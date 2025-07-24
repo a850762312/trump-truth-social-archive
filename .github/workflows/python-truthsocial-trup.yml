@@ -28,7 +28,7 @@ jobs:
         set -e
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-        pip install alibabacloud-dingtalk==2.0.1 
+        pip install alibabacloud-dingtalk==2.2.2 
         pip install alibabacloud-tea-openapi
         pip install alibabacloud-tea-util
     
