@@ -20,13 +20,15 @@ jobs:
       uses: actions/setup-python@v4
       with:
         python-version: '3.9'
-    
+    - name: Clean Python cache
+      run: |
+          python -m pip cache purge
     - name: Install dependencies
       run: |
         set -e
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-        pip install alibabacloud-dingtalk
+        pip install alibabacloud-dingtalk==2.0.1 
         pip install alibabacloud-tea-openapi
         pip install alibabacloud-tea-util
     
